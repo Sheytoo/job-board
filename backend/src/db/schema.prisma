@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model advert {
+  id           Int           @id @default(autoincrement())
+  idCompany    Int
+  idCreator    Int
+  idAddress    Int
+  title        String        @db.VarChar(255)
+  description  String        @db.Text
+  creationDate DateTime      @default(now()) @db.Timestamp(0)
+  address      address       @relation(fields: [idAddress], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_advert_address")
+  company      company       @relation(fields: [idCompany], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_advert_company")
+  user         user          @relation(fields: [idCreator], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_advert_user")
+  application  application[]
+
+  @@index([idCompany], map: "fk_advert_company")
+  @@index([idCreator], map: "fk_advert_user")
+  @@index([idAddress], map: "fk_advert_address")
+}
+
+model application {
+  id           Int                @id @default(autoincrement())
+  idAdvert     Int
+  email        String             @db.VarChar(320)
+  firstName    String             @db.VarChar(255)
+  lastName     String             @db.VarChar(255)
+  message      String             @db.Text
+  status       application_status @default(PENDING)
+  creationDate DateTime           @default(now()) @db.Timestamp(0)
+  advert       advert             @relation(fields: [idAdvert], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_application_advert")
+
+  @@index([idAdvert], map: "fk_application_advert")
+}
+
+model company {
+  id      Int      @id @default(autoincrement())
+  name    String   @db.VarChar(255)
+  logoUrl String?  @db.VarChar(512)
+  advert  advert[]
+}
+
+model user {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique(map: "email") @db.VarChar(320)
+  password  String   @db.Text
+  firstName String   @db.VarChar(255)
+  lastName  String   @db.VarChar(255)
+  isAdmin   Boolean  @default(false)
+  advert    advert[]
+}
+
+model address {
+  id      Int      @id @default(autoincrement())
+  street  String   @db.VarChar(255)
+  city    String   @db.VarChar(255)
+  zip     String   @db.VarChar(10)
+  country String   @db.VarChar(255)
+  advert  advert[]
+}
+
+enum application_status {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELED
+}
